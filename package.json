@@ -1,0 +1,55 @@
+{
+  "name": "contentful-cli-export",
+  "version": "0.1.0",
+  "type": "module",
+  "description": "Contentful CLI Export Environment",
+  "homepage": "https://github.com/AtidaTech/contentful-cli-export",
+  "keywords": [
+    "cli",
+    "contentful",
+    "contentful-export",
+    "contentful-cli",
+    "contentful-cli-export",
+    "github",
+    "gitlab",
+    "ci/cd"
+  ],
+  "bin": {
+    "contentful-cli-export": "./contentful-cli-export.js"
+  },
+  "engines": {
+    "node": ">=14"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/AtidaTech/contentful-cli-export.git"
+  },
+  "author": "Atida <hello@atida.com>",
+  "license": "MIT",
+  "scripts": {
+    "lint": "node_modules/eslint/bin/eslint.js --resolve-plugins-relative-to ./ --ext js,mjs,cjs,jsx,ts,tsx ./contentful-cli-export.js",
+    "lint-fix": "node_modules/eslint/bin/eslint.js --resolve-plugins-relative-to ./ --ext js,mjs,cjs,jsx,ts,tsx ./contentful-cli-export.js --fix"
+  },
+  "dependencies": {
+    "contentful-management": ">7.50.0",
+    "contentful-lib-helpers": ">=0.1.8",
+    "contentful-export": ">=7.18.7",
+    "adm-zip": "^0.5.9",
+    "dateformat": "^4.6.3",
+    "dotenv": ">=10.0.0",
+    "fs": "0.0.1-security",
+    "minimist": "^1.2.5",
+    "path": "^0.12.7"
+  },
+  "devDependencies": {
+    "@typescript-eslint/eslint-plugin": "^5.54.1",
+    "dotenv": "^16.0.3",
+    "eslint": "^8.35.0",
+    "eslint-config-prettier": "^8.7.0",
+    "eslint-plugin-import": "^2.27.5",
+    "eslint-plugin-jsx-a11y": "^6.7.1",
+    "eslint-plugin-prettier": "^4.2.1",
+    "eslint-plugin-react": "^7.32.2",
+    "eslint-plugin-react-hooks": "^4.6.0"
+  }
+}

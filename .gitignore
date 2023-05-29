@@ -1,0 +1,9 @@
+build/*
+node_modules/*
+export/
+export/*
+.env
+.env*
+test.js
+test*.js
+.DS_Store
