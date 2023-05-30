@@ -1,26 +1,26 @@
+#! /usr/bin/env node
+
 const DELETE_FOLDER_DELAY = 5000
 
 ;(async function main() {
   try {
-    const dirNamePath = await getDirNamePath()
-    const envValues = await getEnvValues(dirNamePath)
+    const localeWorkingDir = process.cwd()
+    const envValues = await getEnvValues(
+      localeWorkingDir,
+      await getDirNamePath()
+    )
 
     const cmsSpaceId = envValues?.CMS_SPACE_ID ?? 'placeholder-space-id'
     const cmsManagementToken =
       envValues?.CMS_MANAGEMENT_TOKEN ?? 'placeholder-management-token'
 
     const initialSettings = await parseArguments(
-      dirNamePath,
+      localeWorkingDir,
       cmsSpaceId,
       cmsManagementToken
     )
 
-    console.log(initialSettings)
-
     const options = await extractOptions(initialSettings)
-
-    console.log(options)
-
     await performExport(options, initialSettings)
   } catch (error) {
     console.error('@@/ERROR:', error)
@@ -28,42 +28,32 @@ const DELETE_FOLDER_DELAY = 5000
 })()
 
 /**
- * Gets the current directory's path.
- *
- * @return {Promise<string>} The path of the current directory.
- */
-async function getDirNamePath() {
-  const { fileURLToPath } = await import('url')
-  const { dirname } = await import('path')
-
-  const __filename = fileURLToPath(import.meta.url)
-  return dirname(__filename)
-}
-
-/**
  * Reads environment values from .env files.
  *
- * @param {string} dirNamePath - The directory path where the .env files are located.
+ * @param {string} localWorkingDir - The directory path where the .env files are located.
+ * @param {string} scriptDirectory - The directory path where the library is installed
  * @return {Promise<object>} The environment values.
  */
-async function getEnvValues(dirNamePath) {
+async function getEnvValues(localWorkingDir, scriptDirectory) {
   const fileSystem = await import('fs')
   const dotenv = await import('dotenv')
 
   // Trying to find out where the user's '.env' and '.env.local' files are
-  const rootBasicExists = fileSystem.existsSync(dirNamePath + '/../../../.env')
+  const rootBasicExists = fileSystem.existsSync(scriptDirectory + '/../../.env')
   const rootLocalExists = fileSystem.existsSync(
-    dirNamePath + '/../../../.env.local'
+    scriptDirectory + '/../../.env.local'
   )
-  const activeBasicExists = fileSystem.existsSync(dirNamePath + '/.env')
-  const activeLocalExists = fileSystem.existsSync(dirNamePath + '/.env.local')
+  const activeBasicExists = fileSystem.existsSync(localWorkingDir + '/.env')
+  const activeLocalExists = fileSystem.existsSync(
+    localWorkingDir + '/.env.local'
+  )
 
   // Get the data from DotEnv
   const rootBasicEnv = rootBasicExists
-    ? dotenv.config({ path: dirNamePath + '/../../../.env' }).parsed
+    ? dotenv.config({ path: scriptDirectory + '/../../.env' }).parsed
     : {}
   const rootLocalEnv = rootLocalExists
-    ? dotenv.config({ path: dirNamePath + '/../../../.env.local' }).parsed
+    ? dotenv.config({ path: scriptDirectory + '/../../.env.local' }).parsed
     : {}
   const activeBasicEnv = activeBasicExists
     ? dotenv.config({ path: '.env' }).parsed
@@ -319,6 +309,19 @@ async function performExport(options, initialSettings) {
       console.log('##/INFO: ' + logFile)
     }
   })
+}
+
+/**
+ * Gets the current directory's path.
+ *
+ * @return {Promise<string>} The path of the current directory.
+ */
+async function getDirNamePath() {
+  const { fileURLToPath } = await import('url')
+  const { dirname } = await import('path')
+
+  const __filename = fileURLToPath(import.meta.url)
+  return dirname(__filename)
 }
 
 /**
