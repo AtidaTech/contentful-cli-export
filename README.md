@@ -47,6 +47,7 @@ yarn add contentful-cli-export
 * `node` >= 14.0.0
 * `npm` >= 8.5.5
 * `contentful-management` >= 7.50.0 
+* `contentful-export` >= 7.18.7
 * [contentful-lib-helpers](https://www.npmjs.com/package/contentful-lib-helpers) >= 1.8.0
 
 ### Set-up
@@ -106,7 +107,8 @@ This script can be used from the command line and accepts various arguments for 
   </tr>
 </table>
 
-However, feel free to open issues or pull requests if you have suggestions or improvements to propose.
+### Contributions
+Feel free to open issues or pull requests in our GitHub Repository if you have suggestions or improvements to propose.
 
 ## 🎩 Acknowledgements
 
