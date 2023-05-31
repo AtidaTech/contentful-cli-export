@@ -309,9 +309,6 @@ async function extractOptions(initialSettings) {
  * @throws {Error} If there is an error during the ZIP file compress
  */
 async function performExport(options, initialSettings) {
-  console.log(options)
-  console.log(initialSettings)
-
   const contentfulExport = (await import('contentful-export')).default
   const admZip = (await import('adm-zip')).default
   const fileSystem = await import('fs')
@@ -409,7 +406,7 @@ async function buildFilePath(rootFolder, fileName = '', ext = '') {
 async function deleteFolderAfterZip(destinationFolder) {
   const fileSystem = await import('fs')
 
-  console.log('Deleting Temporary Destination Folder.... ')
+  console.log('##/INFO: Deleting Temporary Destination Folder.... ')
   setTimeout(() => {
     // Delete folder and json (leave only the zip file)
     fileSystem.rmdirSync(destinationFolder, { recursive: true })
