@@ -6,9 +6,9 @@
 
 # Contentful Export Tool
 
-This tool simplifies exporting data from a Content Management System (CMS) like Contentful. It's easier to use than the actual Contentful CLI export and can also be easily integrated into a CI/CD pipeline such as GitLab or GitHub.
+This tool simplifies exporting data from Contentful to a local json file. It's easier to use than the actual Contentful CLI export and can also be easily integrated into a CI/CD pipeline such as GitLab or GitHub.
 
-> Note: This is NOT the official Contentful CLI Export tool
+> Note: This is NOT the official Contentful CLI Export tool. That can be found on [GitHub 🔗](https://github.com/contentful/contentful-cli) or [NpmJS 🔗](https://www.npmjs.com/package/contentful-cli)
 
 <h3>Sponsored by <a href="https://github.com/AtidaTech"><b>Atida</b> <img src="https://avatars.githubusercontent.com/u/127305035?s=200&v=4" width="14px;" alt="Atida" /></a></h3>
 
@@ -21,14 +21,14 @@ This tool simplifies exporting data from a Content Management System (CMS) like 
 ## ✨ Features
 
 - **Ease of Use:** Compared to the actual Contentful CLI, this tool requires less manual configuration and is more straightforward to use.
-- **CI/CD Pipeline Integration:** It is designed to be used as part of a CI/CD pipeline, like GitLab or GitHub. It doesn't require installation in the system, making it portable and easy to run in various environments.
-- **Command Line Parameters:** All necessary parameters can be passed via command line arguments, making it flexible for different use cases.
+- **CI/CD Pipeline Integration:** It is designed to be used as part of a CI/CD pipeline, like GitLab or GitHub. Differently from the official Contentful CLI, it doesn't require a global installation, making it portable and easy to run in various environments.
+- **Command Line Parameters:** All necessary parameters can be passed via command line arguments, making it flexible for different use cases. These include management-token, space-id and environment-id, making it even more suitable for being integrated into a release pipeline.
 - **ZIP Compression:** This tool provides an option to compress the result into a ZIP file. This is particularly useful when exporting large amounts of data or assets, helping to save storage space.
-- **Consistent Naming:** The naming of the output files (JSON, ZIP, and log) are consistent and predictable, making it easier to manage the exported data.
+- **Consistent Naming:** The naming of the output files (.json, .zip, and .log) are consistent and predictable, making it easier to manage the exported data (current date + space-id + environment-id).
 
 ## 💡 Installation
 
-To use this helper library, you must have [NodeJS 🔗](https://nodejs.org/) and [npm 🔗](http://npmjs.org) installed.
+To use this cli script, you must have [NodeJS 🔗](https://nodejs.org/) and [npm 🔗](http://npmjs.org) installed.
 
 To install it, simply run:
 
@@ -52,20 +52,21 @@ yarn add contentful-cli-export
 
 ### Set-up
 
-To better use the Contentful CLI Export, it is recommended to put the following values in your `.env`/`.env.local` file:
+* To better use the Contentful CLI Export, it is recommended to put the following values in your `.env`/`.env.local` file:
 
-```shell
-CMS_SPACE_ID=<space-id>
-CMS_MANAGEMENT_TOKEN=<management-token>
-```
+    ```shell
+    CMS_MANAGEMENT_TOKEN=<management-token>
+    CMS_SPACE_ID=<space-id>
+    CMS_MAX_ALLOWED_LIMIT=100
+    ```
 
-However, the two values could also be passed as parameters during execution.
+    However, these values could also be passed as parameters during execution.
 
-Also, it is needed that you create an `export/` folder in the root of your project. It will contain all the exports.
+* Also, it is needed that you create an `export/` folder in the root of your project. It will contain all the exports.
 
 ## 📟 Example
 
-The basic command should contain the `from` environment we want to export:
+The basic command should contain the `from` environment we want to export from:
 
 ```shell
 npx contentful-cli-export --from "<environment-id>"
@@ -83,14 +84,15 @@ This will export data from the specified environment-id, space-id, and managemen
 
 This script can be used from the command line and accepts various arguments for customization:
 
-* `--from` or `--environment-id` (MANDATORY): The environment id from which data will be exported.
+* `--from` or `--environment-id` [MANDATORY]: The environment id from which data will be exported.
 * `--space-id`: The Contentful space id.
 * `--management-token` or `--mt`: The Contentful Management Token.
 * `--only-published`: To include only published data.
 * `--download-assets`: To include assets in the exported data.
-* `--verbose`: For verbose logging (useful in CI).
+* `--verbose`: Display the progress in new lines, instead of animated UI (useful in CI).
 * `--compress`: To compress the result into a ZIP file.
-* `--export-dir`: To specify a custom directory for the exported data (default is sub-directory `export/` in your project root)
+* `--export-dir`: To specify a custom directory for the exported data (default is sub-directory `export/` in your project root).
+* `--max-allowed-limit`: Number of entries to fetch at each iteration. Max: `1000` - Recommended: `100` (lower values fire more API calls, but avoid 'Response too big' error).
 
 ## 📅 Todo
 
