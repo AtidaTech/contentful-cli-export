@@ -48,7 +48,7 @@ yarn add contentful-cli-export
 * `npm` >= 8.5.5
 * `contentful-management` >= 7.50.0 
 * `contentful-export` >= 7.18.7
-* [contentful-lib-helpers](https://www.npmjs.com/package/contentful-lib-helpers) >= 1.8.0
+* [contentful-lib-helpers](https://www.npmjs.com/package/contentful-lib-helpers) >= 1.9.0
 
 ### Set-up
 
