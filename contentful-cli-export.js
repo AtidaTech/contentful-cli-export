@@ -5,19 +5,20 @@ const DELETE_FOLDER_DELAY = 5000
 ;(async function main() {
   try {
     const localeWorkingDir = process.cwd()
-    const envValues = await getEnvValues(
-      localeWorkingDir,
-      await getDirNamePath()
-    )
+    const scriptDirectory = await getDirNamePath()
 
-    const cmsSpaceId = envValues?.CMS_SPACE_ID ?? 'placeholder-space-id'
+    const envValues = await getEnvValues(localeWorkingDir, scriptDirectory)
+
     const cmsManagementToken =
       envValues?.CMS_MANAGEMENT_TOKEN ?? 'placeholder-management-token'
+    const cmsSpaceId = envValues?.CMS_SPACE_ID ?? 'placeholder-space-id'
+    const cmsMaxEntries = parseInt(envValues?.CMS_MAX_ALLOWED_LIMIT) ?? 100
 
     const initialSettings = await parseArguments(
       localeWorkingDir,
+      cmsManagementToken,
       cmsSpaceId,
-      cmsManagementToken
+      cmsMaxEntries
     )
 
     const options = await extractOptions(initialSettings)
@@ -33,75 +34,72 @@ const DELETE_FOLDER_DELAY = 5000
  * @param {string} localWorkingDir - The directory path where the .env files are located.
  * @param {string} scriptDirectory - The directory path where the library is installed
  * @return {Promise<object>} The environment values.
+ * @property {string} CMS_MANAGEMENT_TOKEN - The CMA token for Contentful.
+ * @property {string} CMS_SPACE_ID - The Space ID.
+ * @property {string|number} CMS_MAX_ALLOWED_LIMIT - The maximum number of entries per query.
+ *
  */
 async function getEnvValues(localWorkingDir, scriptDirectory) {
-  const fileSystem = await import('fs')
-  const dotenv = await import('dotenv')
+  const { existsSync } = await import('fs')
+  const { config } = await import('dotenv')
 
-  // Trying to find out where the user's '.env' and '.env.local' files are
-  const rootBasicExists = fileSystem.existsSync(scriptDirectory + '/../../.env')
-  const rootLocalExists = fileSystem.existsSync(
-    scriptDirectory + '/../../.env.local'
-  )
-  const activeBasicExists = fileSystem.existsSync(localWorkingDir + '/.env')
-  const activeLocalExists = fileSystem.existsSync(
-    localWorkingDir + '/.env.local'
-  )
+  const envDataFromPath = path =>
+    existsSync(path) ? config({ path }).parsed : {}
 
-  // Get the data from DotEnv
-  const rootBasicEnv = rootBasicExists
-    ? dotenv.config({ path: scriptDirectory + '/../../.env' }).parsed
-    : {}
-  const rootLocalEnv = rootLocalExists
-    ? dotenv.config({ path: scriptDirectory + '/../../.env.local' }).parsed
-    : {}
-  const activeBasicEnv = activeBasicExists
-    ? dotenv.config({ path: '.env' }).parsed
-    : {}
-  const activeLocalEnv = activeLocalExists
-    ? dotenv.config({ path: '.env.local' }).parsed
-    : {}
+  const paths = [
+    `${scriptDirectory}/../../.env`,
+    `${scriptDirectory}/../../.env.local`,
+    `${localWorkingDir}/.env`,
+    `${localWorkingDir}/.env.local`
+  ]
 
-  return {
-    ...rootBasicEnv,
-    ...rootLocalEnv,
-    ...activeBasicEnv,
-    ...activeLocalEnv
-  }
+  const envValues = paths.map(envDataFromPath)
+
+  return Object.assign({}, ...envValues)
 }
 
 /**
  * Parses command line arguments and sets default values.
  *
  * @param {string} dirNamePath - The directory path where the .env files are located.
- * @param {string} cmsSpaceId - The CMS Space ID.
  * @param {string} cmsManagementToken - The CMS Management Token.
- * @return {Promise<object>} The initial settings.
+ * @param {string} cmsSpaceId - The CMS Space ID.
+ * @param {number} [cmsMaxEntries=100] - The CMS Max Entries to fetch at each iteration.
+ * @returns {Promise<object>} The initial settings.
+ * @property {string} spaceId - The CMS Space ID.
+ * @property {string} environmentId - The CMS Environment ID.
+ * @property {string} managementToken - The CMS Management Token.
+ * @property {number} maxEntries - The maximum entries to be fetched in each iteration.
+ * @property {string} rootDestinationFolder - The root destination folder for exports.
+ * @property {string} defaultExportName - The default name for the export.
+ * @property {boolean} includeDrafts - Boolean indicating whether to include drafts.
+ * @property {boolean} includeAssets - Boolean indicating whether to include assets.
+ * @property {boolean} isVerbose - Boolean indicating verbose mode.
+ * @property {boolean} shouldCompressFolder - Boolean indicating whether to compress folder.
+ *
+ * @throws {Error} If '--environment-id' or '--from' are not provided or if '--management-token' or '--mt' are duplicated.
  */
-async function parseArguments(dirNamePath, cmsSpaceId, cmsManagementToken) {
+async function parseArguments(
+  dirNamePath,
+  cmsManagementToken,
+  cmsSpaceId,
+  cmsMaxEntries = 100
+) {
   const minimist = (await import('minimist')).default
-  const fileSystem = await import('fs')
   const dateFormat = (await import('dateformat')).default
 
-  // Some default variables
-  let environmentId = 'placeholder-environment-id'
-  let shouldIncludeDrafts = true
-  let shouldIncludeAssets = false
-  let isVerbose = false
-  let shouldCompressFolder = false
-  let spaceId = cmsSpaceId
-  let managementToken = cmsManagementToken
+  const parsedArgs = minimist(process.argv.slice(2))
+  await checkArgs(parsedArgs)
 
-  let parsedArgs = minimist(process.argv.slice(2))
-  if (
-    parsedArgs.hasOwnProperty('from') &&
-    parsedArgs.hasOwnProperty('environment-id')
-  ) {
-    console.error(
-      "@@/ERROR: Only one of the two options '--environment-id' or '--from' can be specified"
-    )
-    process.exit(1)
-  }
+  let environmentId = null
+  const spaceId = parsedArgs['space-id'] ?? cmsSpaceId
+  const managementToken =
+    parsedArgs['management-token'] ?? parsedArgs['mt'] ?? cmsManagementToken
+  const maxEntries = parsedArgs['max-allowed-limit'] ?? cmsMaxEntries
+  const rootDestinationFolder = await getDestinationFolder(
+    dirNamePath,
+    parsedArgs
+  )
 
   if (
     parsedArgs.hasOwnProperty('from') ||
@@ -113,8 +111,56 @@ async function parseArguments(dirNamePath, cmsSpaceId, cmsManagementToken) {
     process.exit(1)
   }
 
-  if (parsedArgs.hasOwnProperty('space-id')) {
-    spaceId = parsedArgs['space-id']
+  const now = new Date()
+  const currentDate = dateFormat(now, 'yyyy-mm-dd-HH-MM-ss')
+  const defaultExportName = currentDate + '-' + spaceId + '-' + environmentId
+
+  return {
+    managementToken,
+    spaceId,
+    environmentId,
+    maxEntries,
+    rootDestinationFolder,
+    defaultExportName,
+    includeDrafts: !parsedArgs.hasOwnProperty('only-published'),
+    includeAssets: parsedArgs.hasOwnProperty('download-assets'),
+    isVerbose: parsedArgs.hasOwnProperty('verbose'),
+    shouldCompressFolder: parsedArgs.hasOwnProperty('compress')
+  }
+}
+
+/**
+ * This function checks the arguments passed in the command line.
+ *
+ * @param {Object} parsedArgs - The object that contains the parsed command line arguments.
+ *
+ * @returns {Promise<object>} An object containing the evaluated command line arguments.
+ * @property {string} environmentId - The ID of the environment.
+ * @property {string} spaceId - The ID of the space.
+ * @property {string} managementToken - The token for CMS management.
+ * @property {number} maxEntries - The maximum entries to be fetched in each iteration.
+ * @property {boolean} shouldIncludeDrafts - Flag indicating whether drafts should be included in the export.
+ * @property {boolean} shouldIncludeAssets - Flag indicating whether assets should be included in the export.
+ * @property {boolean} isVerbose - Flag indicating whether verbose logging is enabled.
+ * @property {boolean} shouldCompressFolder - Flag indicating whether the export folder should be compressed.
+ * @property {string} destinationFolder - The destination folder for the export.
+ *
+ * @throws {Error} If both 'from' and 'environment-id' options are specified or if neither is specified.
+ * @throws {Error} If both 'management-token' and 'mt' options are specified.
+ */
+async function checkArgs(parsedArgs) {
+  if (
+    (parsedArgs.hasOwnProperty('from') &&
+      parsedArgs.hasOwnProperty('environment-id')) ||
+    !(
+      parsedArgs.hasOwnProperty('from') ||
+      parsedArgs.hasOwnProperty('environment-id')
+    )
+  ) {
+    console.error(
+      "@@/ERROR: Only one of the two options '--environment-id' or '--from' should be specified"
+    )
+    process.exit(1)
   }
 
   if (
@@ -126,77 +172,57 @@ async function parseArguments(dirNamePath, cmsSpaceId, cmsManagementToken) {
     )
     process.exit(1)
   }
+}
 
-  if (
-    parsedArgs.hasOwnProperty('management-token') ||
-    parsedArgs.hasOwnProperty('mt')
-  ) {
-    managementToken = parsedArgs['management-token'] ?? parsedArgs['mt']
-  }
+/**
+ * This function gets the destination folder based on whether a custom folder is provided or not.
+ *
+ * @param {string} dirNamePath - The directory path where the .env files are located.
+ * @param {Object} parsedArgs - The object that contains the parsed command line arguments.
+ *
+ * @returns {Promise<object>} An object containing the evaluated destination folder and a flag indicating whether a custom folder was used.
+ * @property {string} destinationFolder - The destination folder for the export.
+ *
+ * @throws {Error} If the destination folder does not exist or is not accessible.
+ */
+async function getDestinationFolder(dirNamePath, parsedArgs) {
+  const fileSystem = await import('fs')
 
-  if (parsedArgs.hasOwnProperty('only-published')) {
-    shouldIncludeDrafts = false
-  }
-
-  if (parsedArgs.hasOwnProperty('download-assets')) {
-    shouldIncludeAssets = true
-  }
-
-  if (parsedArgs.hasOwnProperty('verbose')) {
-    isVerbose = true
-  }
-
-  if (parsedArgs.hasOwnProperty('compress')) {
-    shouldCompressFolder = true
-  }
-
-  let destinationFolder = dirNamePath + '/export/'
-  let isDestinationFolderCustom = false
-
-  if (parsedArgs.hasOwnProperty('export-dir')) {
-    destinationFolder = parsedArgs['export-dir']
-    isDestinationFolderCustom = true
-  }
-
+  let destinationFolder = parsedArgs['export-dir'] ?? dirNamePath + '/export/'
   if (!destinationFolder.endsWith('/')) {
     destinationFolder += '/'
   }
 
   // Create destination folder if not present
-  let destinationFolderExists = fileSystem.existsSync(destinationFolder)
-  if (!isDestinationFolderCustom && !destinationFolderExists) {
+  const destinationFolderExists = fileSystem.existsSync(destinationFolder)
+  if (!parsedArgs.hasOwnProperty('export-dir') && !destinationFolderExists) {
     fileSystem.mkdirSync(destinationFolder)
   }
 
-  destinationFolderExists = fileSystem.existsSync(destinationFolder)
-  if (!destinationFolderExists || destinationFolder === '/') {
+  if (!fileSystem.existsSync(destinationFolder) || destinationFolder === '/') {
     console.error(
       '@@/ERROR: Destination folder does not exist or not accessible!'
     )
     process.exit(1)
   }
 
-  const now = new Date()
-  const currentDate = dateFormat(now, 'yyyy-mm-dd-HH-MM-ss')
-  const defaultExportName = currentDate + '-' + spaceId + '-' + environmentId
-
-  return {
-    spaceId: spaceId,
-    environmentId: environmentId,
-    managementToken: managementToken,
-    includeDrafts: shouldIncludeDrafts,
-    includeAssets: shouldIncludeAssets,
-    isVerbose: isVerbose,
-    shouldCompressFolder: shouldCompressFolder,
-    rootDestinationFolder: destinationFolder,
-    defaultExportName: defaultExportName
-  }
+  return destinationFolder
 }
 
 /**
  * Extracts Contentful exporter options from the initial settings.
  *
  * @param {object} initialSettings - The initial settings obtained from command line arguments and .env files.
+ * @property {string} spaceId - The CMS Space ID.
+ * @property {string} environmentId - The CMS Environment ID.
+ * @property {string} managementToken - The CMS Management Token.
+ * @property {number} maxEntries - The maximum entries to be fetched in each iteration.
+ * @property {string} rootDestinationFolder - The root destination folder for exports.
+ * @property {string} defaultExportName - The default name for the export.
+ * @property {boolean} includeDrafts - Boolean indicating whether to include drafts.
+ * @property {boolean} includeAssets - Boolean indicating whether to include assets.
+ * @property {boolean} isVerbose - Boolean indicating verbose mode.
+ * @property {boolean} shouldCompressFolder - Boolean indicating whether to compress folder.
  * @return {Promise<object>} The options for performing the export.
  */
 async function extractOptions(initialSettings) {
@@ -205,19 +231,16 @@ async function extractOptions(initialSettings) {
   const fileSystem = await import('fs')
 
   // Set up filename for export file and log
+  const isCompressed = initialSettings?.shouldCompressFolder
+  const rootFolder = initialSettings.rootDestinationFolder
   const defaultExportName = initialSettings?.defaultExportName
-  const exportDirname =
-    initialSettings.rootDestinationFolder + defaultExportName + '/'
+  const exportDirname = rootFolder + defaultExportName + '/'
+  const mainFolder = isCompressed ? rootFolder : exportDirname
 
   fileSystem.mkdirSync(exportDirname)
 
   let contentFile = defaultExportName + '.json'
-  let logFilePath =
-    (initialSettings?.shouldCompressFolder
-      ? initialSettings.rootDestinationFolder
-      : exportDirname) +
-    defaultExportName +
-    '.log'
+  let logFilePath = mainFolder + defaultExportName + '.log'
 
   if (
     !(await lib.getEnvironment(
@@ -246,21 +269,24 @@ async function extractOptions(initialSettings) {
       initialSettings?.environmentId +
       '" started...'
   )
-  console.log('##/INFO: Using destination folder: ' + exportDirname)
+  console.log(
+    '##/INFO: Using destination: ' +
+      (isCompressed ? mainFolder + defaultExportName + '.zip' : mainFolder)
+  )
 
   return {
-    spaceId: initialSettings.spaceId,
-    managementToken: initialSettings.managementToken,
-    environmentId: initialSettings.environmentId,
+    managementToken: initialSettings?.managementToken,
+    spaceId: initialSettings?.spaceId,
+    environmentId: initialSettings?.environmentId,
     exportDir: exportDirname,
     contentFile: contentFile,
     saveFile: true,
-    includeDrafts: initialSettings.includeDrafts,
-    includeArchived: initialSettings.includeDrafts,
-    downloadAssets: initialSettings.includeAssets,
+    includeDrafts: initialSettings?.includeDrafts,
+    includeArchived: initialSettings?.includeDrafts,
+    downloadAssets: initialSettings?.includeAssets,
     errorLogFile: logFilePath,
-    useVerboseRenderer: initialSettings.isVerbose,
-    maxAllowedLimit: 100
+    useVerboseRenderer: initialSettings?.isVerbose,
+    maxAllowedLimit: initialSettings?.maxEntries
   }
 }
 
@@ -269,46 +295,66 @@ async function extractOptions(initialSettings) {
  *
  * @param {object} options - The options for performing the export.
  * @param {object} initialSettings - The initial settings obtained from command line arguments and .env files.
+ * @property {string} spaceId - The CMS Space ID.
+ * @property {string} environmentId - The CMS Environment ID.
+ * @property {string} managementToken - The CMS Management Token.
+ * @property {number} maxEntries - The maximum entries to be fetched in each iteration.
+ * @property {string} rootDestinationFolder - The root destination folder for exports.
+ * @property {string} defaultExportName - The default name for the export.
+ * @property {boolean} includeDrafts - Boolean indicating whether to include drafts.
+ * @property {boolean} includeAssets - Boolean indicating whether to include assets.
+ * @property {boolean} isVerbose - Boolean indicating verbose mode.
+ * @property {boolean} shouldCompressFolder - Boolean indicating whether to compress folder.
+ *
+ * @throws {Error} If there is an error during the ZIP file compress
  */
 async function performExport(options, initialSettings) {
+  console.log(options)
+  console.log(initialSettings)
+
   const contentfulExport = (await import('contentful-export')).default
   const admZip = (await import('adm-zip')).default
   const fileSystem = await import('fs')
 
-  contentfulExport(options).then(() => {
-    const rootExportFolder = initialSettings?.rootDestinationFolder
-    const defaultExportName = initialSettings?.defaultExportName
-    const destinationFolder = rootExportFolder + defaultExportName + '/'
-    const contentFile = destinationFolder + defaultExportName + '.json'
-    let logFile = destinationFolder + defaultExportName + '.log'
+  await contentfulExport(options)
 
-    if (initialSettings?.shouldCompressFolder) {
-      // Zip both the folder and json file
-      if (fileSystem.existsSync(destinationFolder)) {
-        console.log('##/INFO: Assets exported. Creating the ZIP File')
-        let zipFile = rootExportFolder + defaultExportName + '.zip'
-        logFile = rootExportFolder + defaultExportName + '.log'
+  const rootExportFolder = initialSettings?.rootDestinationFolder
+  const defaultExportName = initialSettings?.defaultExportName
 
-        const zip = new admZip()
-        zip.addLocalFolder(destinationFolder)
-        zip.writeZip(zipFile, deleteFolderAfterZip(destinationFolder))
+  const destinationFolder = await buildFilePath(
+    rootExportFolder,
+    defaultExportName + '/'
+  )
+  const contentFile = await buildFilePath(
+    destinationFolder,
+    defaultExportName,
+    'json'
+  )
+  let logFile = await buildFilePath(destinationFolder, defaultExportName, 'log')
+  let zipFile = await buildFilePath(rootExportFolder, defaultExportName, 'zip')
 
-        console.log('##/INFO: Export completed')
-        console.log('##/INFO: File Saved at:')
-        console.log('##/INFO: ' + zipFile)
-        console.log('##/INFO: Log file (if present) at:')
-        console.log('##/INFO: ' + logFile)
-      } else {
-        console.error('@@/ERROR: Error happens during ZIP file compression')
-      }
+  if (initialSettings?.shouldCompressFolder) {
+    console.log('##/INFO: Assets exported. Creating the ZIP File')
+
+    if (fileSystem.existsSync(destinationFolder)) {
+      const zip = new admZip()
+      logFile = await buildFilePath(rootExportFolder, defaultExportName, 'log')
+
+      zip.addLocalFolder(destinationFolder)
+      zip.writeZip(zipFile, await deleteFolderAfterZip(destinationFolder))
     } else {
-      console.log('##/INFO: Export completed')
-      console.log('##/INFO: File Saved at:')
-      console.log('##/INFO: ' + contentFile)
-      console.log('##/INFO: Log file (if present) at:')
-      console.log('##/INFO: ' + logFile)
+      throw new Error('Error happened during ZIP file compression')
     }
-  })
+  }
+
+  console.log('##/INFO: Export completed')
+  console.log('##/INFO: File Saved at:')
+  console.log(
+    '##/INFO: ' +
+      (initialSettings?.shouldCompressFolder ? zipFile : contentFile)
+  )
+  console.log('##/INFO: Log file (if present) at:')
+  console.log('##/INFO: ' + logFile)
 }
 
 /**
@@ -322,6 +368,36 @@ async function getDirNamePath() {
 
   const __filename = fileURLToPath(import.meta.url)
   return dirname(__filename)
+}
+
+/**
+ * Constructs a file path based on the provided parameters.
+ *
+ * @param {string} rootFolder - The root folder for the file path.
+ * @param {string} [fileName=''] - The name of the file or subdirectory. If only `fileName` is provided, it is treated as a subdirectory.
+ * @param {string} [ext=''] - The file extension. If only `ext` is provided, `fileName` is treated as the extension.
+ *
+ * @returns {Promise<string>} - The constructed file path.
+ *
+ * @example
+ * buildFilePath('/rootFolder', 'subdirectory');
+ * // Returns: '/rootFolder/subdirectory'
+ *
+ * @example
+ * buildFilePath('/rootFolder', 'file', 'json');
+ * // Returns: '/rootFolder/file.json'
+ *
+ * @example
+ * buildFilePath('/rootFolder', '', 'zip');
+ * // Returns: '/rootFolder.zip'
+ */
+async function buildFilePath(rootFolder, fileName = '', ext = '') {
+  let filePath = rootFolder
+
+  filePath += fileName ? `${fileName}` : ''
+  filePath += ext ? `.${ext}` : ''
+
+  return filePath
 }
 
 /**
