@@ -1,6 +1,10 @@
 #! /usr/bin/env node
 
 const DELETE_FOLDER_DELAY = 5000
+const PLACEHOLDER_MANAGEMENT_TOKEN = 'placeholder-management-token'
+const PLACEHOLDER_SPACE_ID = 'placeholder-space-id'
+const DEFAULT_ALLOWED_LIMIT = 100
+const DEFAULT_EXPORT_DIR = 'export/'
 
 ;(async function main() {
   try {
@@ -10,12 +14,15 @@ const DELETE_FOLDER_DELAY = 5000
     const envValues = await getEnvValues(localeWorkingDir, scriptDirectory)
 
     const cmsManagementToken =
-      envValues?.CMS_MANAGEMENT_TOKEN ?? 'placeholder-management-token'
-    const cmsSpaceId = envValues?.CMS_SPACE_ID ?? 'placeholder-space-id'
-    const cmsMaxEntries = parseInt(envValues?.CMS_MAX_ALLOWED_LIMIT) ?? 100
+      envValues?.CMS_MANAGEMENT_TOKEN ?? PLACEHOLDER_MANAGEMENT_TOKEN
+    const cmsSpaceId = envValues?.CMS_SPACE_ID ?? PLACEHOLDER_SPACE_ID
+    const cmsMaxEntries =
+      parseInt(envValues?.CMS_MAX_ALLOWED_LIMIT) ?? DEFAULT_ALLOWED_LIMIT
+    const cmsExportDir = envValues?.CMS_EXPORT_DIR ?? DEFAULT_EXPORT_DIR
 
     const initialSettings = await parseArguments(
       localeWorkingDir,
+      cmsExportDir,
       cmsManagementToken,
       cmsSpaceId,
       cmsMaxEntries
@@ -37,6 +44,7 @@ const DELETE_FOLDER_DELAY = 5000
  * @property {string} CMS_MANAGEMENT_TOKEN - The CMA token for Contentful.
  * @property {string} CMS_SPACE_ID - The Space ID.
  * @property {string|number} CMS_MAX_ALLOWED_LIMIT - The maximum number of entries per query.
+ * @property {string} CMS_EXPORT_DIR - The default export dir from the working directory.
  *
  */
 async function getEnvValues(localWorkingDir, scriptDirectory) {
@@ -61,7 +69,8 @@ async function getEnvValues(localWorkingDir, scriptDirectory) {
 /**
  * Parses command line arguments and sets default values.
  *
- * @param {string} dirNamePath - The directory path where the .env files are located.
+ * @param {string} rootFolder - The directory path where the .env files are located.
+ * @param {string} cmsExportDir - The CMS Default Export Directory.
  * @param {string} cmsManagementToken - The CMS Management Token.
  * @param {string} cmsSpaceId - The CMS Space ID.
  * @param {number} [cmsMaxEntries=100] - The CMS Max Entries to fetch at each iteration.
@@ -80,10 +89,11 @@ async function getEnvValues(localWorkingDir, scriptDirectory) {
  * @throws {Error} If '--environment-id' or '--from' are not provided or if '--management-token' or '--mt' are duplicated.
  */
 async function parseArguments(
-  dirNamePath,
+  rootFolder,
+  cmsExportDir,
   cmsManagementToken,
   cmsSpaceId,
-  cmsMaxEntries = 100
+  cmsMaxEntries = DEFAULT_ALLOWED_LIMIT
 ) {
   const minimist = (await import('minimist')).default
   const dateFormat = (await import('dateformat')).default
@@ -97,7 +107,8 @@ async function parseArguments(
     parsedArgs['management-token'] ?? parsedArgs['mt'] ?? cmsManagementToken
   const maxEntries = parsedArgs['max-allowed-limit'] ?? cmsMaxEntries
   const rootDestinationFolder = await getDestinationFolder(
-    dirNamePath,
+    rootFolder,
+    cmsExportDir,
     parsedArgs
   )
 
@@ -177,7 +188,8 @@ async function checkArgs(parsedArgs) {
 /**
  * This function gets the destination folder based on whether a custom folder is provided or not.
  *
- * @param {string} dirNamePath - The directory path where the .env files are located.
+ * @param {string} rootFolder - The directory path where the script is being executed.
+ * @param {string} cmsExportDir - The CMS Default Export Directory.
  * @param {Object} parsedArgs - The object that contains the parsed command line arguments.
  *
  * @returns {Promise<object>} An object containing the evaluated destination folder and a flag indicating whether a custom folder was used.
@@ -185,23 +197,25 @@ async function checkArgs(parsedArgs) {
  *
  * @throws {Error} If the destination folder does not exist or is not accessible.
  */
-async function getDestinationFolder(dirNamePath, parsedArgs) {
+async function getDestinationFolder(rootFolder, cmsExportDir, parsedArgs) {
   const fileSystem = await import('fs')
 
-  let destinationFolder = parsedArgs['export-dir'] ?? dirNamePath + '/export/'
-  if (!destinationFolder.endsWith('/')) {
-    destinationFolder += '/'
-  }
+  const defaultExportDirectory = cmsExportDir.startsWith('/')
+    ? cmsExportDir
+    : `${rootFolder}/${cmsExportDir}`
+
+  let destinationFolder = parsedArgs['export-dir'] || defaultExportDirectory
+  destinationFolder = destinationFolder.replace(/\/$/, '') + '/'
 
   // Create destination folder if not present
   const destinationFolderExists = fileSystem.existsSync(destinationFolder)
-  if (!parsedArgs.hasOwnProperty('export-dir') && !destinationFolderExists) {
+  if (!parsedArgs['export-dir'] && !destinationFolderExists) {
     fileSystem.mkdirSync(destinationFolder)
   }
 
   if (!fileSystem.existsSync(destinationFolder) || destinationFolder === '/') {
     console.error(
-      '@@/ERROR: Destination folder does not exist or not accessible!'
+      '@@/ERROR: Destination folder does not exist or is not accessible!'
     )
     process.exit(1)
   }

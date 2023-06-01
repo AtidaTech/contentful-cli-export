@@ -3,6 +3,7 @@
 ![GitHub code size in bytes](https://img.shields.io/github/languages/code-size/AtidaTech/contentful-cli-export)
 ![Downloads](https://img.shields.io/npm/dw/contentful-cli-export)
 ![Forks](https://img.shields.io/github/forks/AtidaTech/contentful-cli-export)
+[![Bun.sh](https://img.shields.io/badge/bun.sh-compatible-orange)](https://bun.sh)
 
 # Contentful Export Tool
 
@@ -42,6 +43,8 @@ Or, if using [yarn 🔗](https://yarnpkg.com/lang/en/):
 yarn add contentful-cli-export
 ```
 
+> Similarly, if you are using [Bun 🔗](https://bun.sh), just run `bun add contentful-cli-export`
+
 ### Requirements
 
 * `node` >= 14.0.0
@@ -58,11 +61,13 @@ yarn add contentful-cli-export
     CMS_MANAGEMENT_TOKEN=<management-token>
     CMS_SPACE_ID=<space-id>
     CMS_MAX_ALLOWED_LIMIT=100
+    CMS_EXPORT_DIR=export/
     ```
 
     However, these values could also be passed as parameters during execution.
 
-* Also, it is needed that you create an `export/` folder in the root of your project. It will contain all the exports.
+* You will need to create the `CMS_EXPORT_DIR` folder, that will contain all the exports. This folder should stay preferably in the root of your project. 
+If no folder is specified, a folder `export/` will be created automatically if missing.
 
 ## 📟 Example
 
@@ -91,12 +96,14 @@ This script can be used from the command line and accepts various arguments for 
 * `--download-assets`: To include assets in the exported data.
 * `--verbose`: Display the progress in new lines, instead of animated UI (useful in CI).
 * `--compress`: To compress the result into a ZIP file.
-* `--export-dir`: To specify a custom directory for the exported data (default is sub-directory `export/` in your project root).
+* `--export-dir`: To specify a custom directory for the exported data (default is sub-directory `CMS_EXPORT_DIR` or `export/` in your project root). The script will exit if this custom folder doesn't exist.
 * `--max-allowed-limit`: Number of entries to fetch at each iteration. Max: `1000` - Recommended: `100` (lower values fire more API calls, but avoid 'Response too big' error).
 
 ## 📅 Todo
 
 * Add compatibility with official Contentful Export env/settings.
+* Improve Logging (+ Colors).
+* Add Tests.
 
 ## 👾 Contributors
 
