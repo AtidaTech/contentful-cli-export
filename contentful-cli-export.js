@@ -17,7 +17,7 @@ const DEFAULT_EXPORT_DIR = 'export/'
       envValues?.CMS_MANAGEMENT_TOKEN ?? PLACEHOLDER_MANAGEMENT_TOKEN
     const cmsSpaceId = envValues?.CMS_SPACE_ID ?? PLACEHOLDER_SPACE_ID
     const cmsMaxEntries =
-      parseInt(envValues?.CMS_MAX_ALLOWED_LIMIT) ?? DEFAULT_ALLOWED_LIMIT
+      parseInt(envValues?.CMS_MAX_ALLOWED_LIMIT, 10) ?? DEFAULT_ALLOWED_LIMIT
     const cmsExportDir = envValues?.CMS_EXPORT_DIR ?? DEFAULT_EXPORT_DIR
 
     const initialSettings = await parseArguments(
@@ -101,23 +101,21 @@ async function parseArguments(
   const parsedArgs = minimist(process.argv.slice(2))
   await checkArgs(parsedArgs)
 
-  let environmentId = null
-  const spaceId = parsedArgs['space-id'] ?? cmsSpaceId
-  const managementToken =
-    parsedArgs['management-token'] ?? parsedArgs['mt'] ?? cmsManagementToken
-  const maxEntries = parsedArgs['max-allowed-limit'] ?? cmsMaxEntries
+  const {
+    'space-id': spaceId = cmsSpaceId,
+    'management-token': managementToken = parsedArgs['mt'] ??
+      cmsManagementToken,
+    'max-allowed-limit': maxEntries = cmsMaxEntries
+  } = parsedArgs
+
   const rootDestinationFolder = await getDestinationFolder(
     rootFolder,
     cmsExportDir,
     parsedArgs
   )
 
-  if (
-    parsedArgs.hasOwnProperty('from') ||
-    parsedArgs.hasOwnProperty('environment-id')
-  ) {
-    environmentId = parsedArgs.from ?? parsedArgs['environment-id']
-  } else {
+  const environmentId = parsedArgs.from || parsedArgs['environment-id']
+  if (!environmentId) {
     console.error('@@/ERROR: An environment-id should be specified')
     process.exit(1)
   }
@@ -160,24 +158,14 @@ async function parseArguments(
  * @throws {Error} If both 'management-token' and 'mt' options are specified.
  */
 async function checkArgs(parsedArgs) {
-  if (
-    (parsedArgs.hasOwnProperty('from') &&
-      parsedArgs.hasOwnProperty('environment-id')) ||
-    !(
-      parsedArgs.hasOwnProperty('from') ||
-      parsedArgs.hasOwnProperty('environment-id')
-    )
-  ) {
+  if (!(Boolean(parsedArgs.from) ^ Boolean(parsedArgs['environment-id']))) {
     console.error(
       "@@/ERROR: Only one of the two options '--environment-id' or '--from' should be specified"
     )
     process.exit(1)
   }
 
-  if (
-    parsedArgs.hasOwnProperty('management-token') &&
-    parsedArgs.hasOwnProperty('mt')
-  ) {
+  if (Boolean(parsedArgs['management-token']) && Boolean(parsedArgs.mt)) {
     console.error(
       "@@/ERROR: Only one of the two options '--management-token' or '--mt' can be specified"
     )
@@ -192,7 +180,7 @@ async function checkArgs(parsedArgs) {
  * @param {string} cmsExportDir - The CMS Default Export Directory.
  * @param {Object} parsedArgs - The object that contains the parsed command line arguments.
  *
- * @returns {Promise<object>} An object containing the evaluated destination folder and a flag indicating whether a custom folder was used.
+ * @returns {Promise<string>} The path of the evaluated destination folder.
  * @property {string} destinationFolder - The destination folder for the export.
  *
  * @throws {Error} If the destination folder does not exist or is not accessible.
@@ -251,8 +239,6 @@ async function extractOptions(initialSettings) {
   const exportDirname = rootFolder + defaultExportName + '/'
   const mainFolder = isCompressed ? rootFolder : exportDirname
 
-  fileSystem.mkdirSync(exportDirname)
-
   let contentFile = defaultExportName + '.json'
   let logFilePath = mainFolder + defaultExportName + '.log'
 
@@ -266,8 +252,10 @@ async function extractOptions(initialSettings) {
     ))
   ) {
     console.error(
-      "@@/ERROR: Unable to retrieve Destination environment '" +
+      "@@/ERROR: Unable to retrieve Destination environment-id '" +
         initialSettings?.environmentId +
+        "' for space-id '" +
+        initialSettings?.spaceId +
         "'!"
     )
     console.error(
@@ -275,6 +263,8 @@ async function extractOptions(initialSettings) {
     )
     process.exit(1)
   }
+
+  fileSystem.mkdirSync(exportDirname)
 
   console.log(
     '##/INFO: Export of space-id "' +
