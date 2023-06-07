@@ -43,7 +43,7 @@ Or, if using [yarn 🔗](https://yarnpkg.com/lang/en/):
 yarn add contentful-cli-export
 ```
 
-> Similarly, if you are using [Bun 🔗](https://bun.sh), just run `bun add contentful-cli-export`
+> Similarly, if you are using [Bun 🔗](https://bun.sh), just run<br />`bun add contentful-cli-export`
 
 ### Requirements
 
@@ -51,7 +51,7 @@ yarn add contentful-cli-export
 * `npm` >= 8.5.5
 * `contentful-management` >= 7.50.0 
 * `contentful-export` >= 7.18.7
-* [contentful-lib-helpers](https://www.npmjs.com/package/contentful-lib-helpers) >= 1.9.0
+* [contentful-lib-helpers](https://www.npmjs.com/package/contentful-lib-helpers) >= 0.1.10
 
 ### Set-up
 
