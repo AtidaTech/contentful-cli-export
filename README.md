@@ -15,7 +15,7 @@ This tool simplifies exporting data from Contentful to a local json file. It's e
 
 <hr />
 
-[✨ Features](#-features) · [💡 Installation](#-installation) · [📟 Example](#-example) · [🎹 Usage](#-usage) · [📅ToDo](#-todo) · [👾Contributors](#-contributors) · [🎩Acknowledgments](#-acknowledgements) · [📄License](#-license)
+[✨ Features](#-features) · [💡 Installation](#-installation) · [📟 Example](#-example) · [🎹 Usage](#-usage) · [📅 ToDo](#-todo) · [👾 Contributors](#-contributors) · [🎩 Acknowledgments](#-acknowledgements) · [📄 License](#-license)
 
 <hr />
 
@@ -47,8 +47,8 @@ yarn add contentful-cli-export
 
 ### Requirements
 
-* `node` >= 14.0.0
-* `npm` >= 8.5.5
+* `node` >= 16.0.0
+* `npm` >= 8.19.4
 * `contentful-management` >= 7.50.0 
 * `contentful-export` >= 7.18.7
 * [contentful-lib-helpers](https://www.npmjs.com/package/contentful-lib-helpers) >= 0.1.10
