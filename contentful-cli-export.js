@@ -142,17 +142,11 @@ async function parseArguments(
  * This function checks the arguments passed in the command line.
  *
  * @param {Object} parsedArgs - The object that contains the parsed command line arguments.
- *
- * @returns {Promise<object>} An object containing the evaluated command line arguments.
- * @property {string} environmentId - The ID of the environment.
- * @property {string} spaceId - The ID of the space.
- * @property {string} managementToken - The token for CMS management.
- * @property {number} maxEntries - The maximum entries to be fetched in each iteration.
- * @property {boolean} shouldIncludeDrafts - Flag indicating whether drafts should be included in the export.
- * @property {boolean} shouldIncludeAssets - Flag indicating whether assets should be included in the export.
- * @property {boolean} isVerbose - Flag indicating whether verbose logging is enabled.
- * @property {boolean} shouldCompressFolder - Flag indicating whether the export folder should be compressed.
- * @property {string} destinationFolder - The destination folder for the export.
+ * @property {string} from - The FROM environment
+ * @property {string} environment-id - The FROM environment
+ * @property {string} mt - The Contentful Management Token
+ * @property {string} management-token - The Contentful Management Token
+ * @returns {Promise<void>} If it pass trough, the arguments are validated.
  *
  * @throws {Error} If both 'from' and 'environment-id' options are specified or if neither is specified.
  * @throws {Error} If both 'management-token' and 'mt' options are specified.
