@@ -407,7 +407,7 @@ async function deleteFolderAfterZip(destinationFolder) {
   console.log('##/INFO: Deleting Temporary Destination Folder.... ')
   setTimeout(() => {
     // Delete folder and json (leave only the zip file)
-    fileSystem.rmdirSync(destinationFolder, { recursive: true })
+    fileSystem.rmSync(destinationFolder, { recursive: true })
   }, DELETE_FOLDER_DELAY)
 
   return true
