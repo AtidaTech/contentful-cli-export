@@ -8,10 +8,10 @@ const DEFAULT_EXPORT_DIR = 'export/'
 
 ;(async function main() {
   try {
-    const localeWorkingDir = process.cwd()
+    const localWorkingDir = process.cwd()
     const scriptDirectory = await getDirNamePath()
 
-    const envValues = await getEnvValues(localeWorkingDir, scriptDirectory)
+    const envValues = await getEnvValues(localWorkingDir, scriptDirectory)
 
     const cmsManagementToken =
       envValues?.CMS_MANAGEMENT_TOKEN ?? PLACEHOLDER_MANAGEMENT_TOKEN
@@ -21,7 +21,7 @@ const DEFAULT_EXPORT_DIR = 'export/'
     const cmsExportDir = envValues?.CMS_EXPORT_DIR ?? DEFAULT_EXPORT_DIR
 
     const initialSettings = await parseArguments(
-      localeWorkingDir,
+      localWorkingDir,
       cmsExportDir,
       cmsManagementToken,
       cmsSpaceId,

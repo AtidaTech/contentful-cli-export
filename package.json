@@ -1,6 +1,6 @@
 {
   "name": "contentful-cli-export",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "type": "module",
   "description": "Contentful CLI Export Environment",
   "homepage": "https://github.com/AtidaTech/contentful-cli-export",
