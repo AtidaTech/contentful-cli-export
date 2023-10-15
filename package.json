@@ -1,6 +1,6 @@
 {
   "name": "contentful-cli-export",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "type": "module",
   "description": "Contentful CLI Export Environment",
   "homepage": "https://github.com/AtidaTech/contentful-cli-export",
@@ -33,7 +33,7 @@
   "dependencies": {
     "adm-zip": "^0.5.9",
     "contentful-export": ">=7.18.7",
-    "contentful-lib-helpers": ">=0.1.10",
+    "contentful-lib-helpers": ">=0.2.1",
     "contentful-management": ">7.50.0",
     "dateformat": "^4.6.3",
     "dotenv": ">=10.0.0",
