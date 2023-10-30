@@ -335,8 +335,8 @@ async function performExport(options, initialSettings) {
       const zip = new admZip()
       logFile = await buildFilePath(rootExportFolder, defaultExportName, 'log')
 
-      zip.addLocalFolder(destinationFolder, '', '', 0o644)
-      zip.writeZip(zipFile, deleteFolderAfterZip(destinationFolder))
+      zip.addLocalFolder(destinationFolder, '', '', null)
+      zip.writeZip(zipFile, await deleteFolderAfterZip(destinationFolder))
     } else {
       throw new Error('Error happened during ZIP file compression')
     }
@@ -399,7 +399,7 @@ async function buildFilePath(rootFolder, fileName = '', ext = '') {
  * Deletes the temporary destination folder after the ZIP file has been created.
  *
  * @param {string} destinationFolder - The folder to delete.
- * @return {Promise<boolean>} The result of the deletion operation.
+ * @return {Promise<Function>} The result of the deletion operation.
  */
 async function deleteFolderAfterZip(destinationFolder) {
   const fileSystem = await import('fs')
@@ -409,6 +409,4 @@ async function deleteFolderAfterZip(destinationFolder) {
     // Delete folder and json (leave only the zip file)
     fileSystem.rmSync(destinationFolder, { recursive: true })
   }, DELETE_FOLDER_DELAY)
-
-  return true
 }
