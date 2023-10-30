@@ -38,8 +38,8 @@ const DEFAULT_EXPORT_DIR = 'export/'
 /**
  * Reads environment values from .env files.
  *
- * @param {string} localWorkingDir - The directory path where the .env files are located.
- * @param {string} scriptDirectory - The directory path where the library is installed
+ * @param {string} localWorkingDir - The directory path where the library is located.
+ * @param {string} scriptDirectory - The directory path where the script is running.
  * @return {Promise<object>} The environment values.
  * @property {string} CMS_MANAGEMENT_TOKEN - The CMA token for Contentful.
  * @property {string} CMS_SPACE_ID - The Space ID.
@@ -142,11 +142,11 @@ async function parseArguments(
  * This function checks the arguments passed in the command line.
  *
  * @param {Object} parsedArgs - The object that contains the parsed command line arguments.
- * @property {string} from - The FROM environment
- * @property {string} environment-id - The FROM environment
- * @property {string} mt - The Contentful Management Token
- * @property {string} management-token - The Contentful Management Token
- * @returns {Promise<void>} If it pass trough, the arguments are validated.
+ * @property {string} parsedArgs.from - The FROM environment
+ * @property {string} parsedArgs.environment-id - The FROM environment
+ * @property {string} parsedArgs.mt - The Contentful Management Token
+ * @property {string} parsedArgs.management-token - The Contentful Management Token
+ * @returns {Promise<void>} If it pass through, the arguments are validated.
  *
  * @throws {Error} If both 'from' and 'environment-id' options are specified or if neither is specified.
  * @throws {Error} If both 'management-token' and 'mt' options are specified.
@@ -209,17 +209,17 @@ async function getDestinationFolder(rootFolder, cmsExportDir, parsedArgs) {
  * Extracts Contentful exporter options from the initial settings.
  *
  * @param {object} initialSettings - The initial settings obtained from command line arguments and .env files.
- * @property {string} spaceId - The CMS Space ID.
- * @property {string} environmentId - The CMS Environment ID.
- * @property {string} managementToken - The CMS Management Token.
- * @property {number} maxEntries - The maximum entries to be fetched in each iteration.
- * @property {string} rootDestinationFolder - The root destination folder for exports.
- * @property {string} defaultExportName - The default name for the export.
- * @property {boolean} includeDrafts - Boolean indicating whether to include drafts.
- * @property {boolean} includeAssets - Boolean indicating whether to include assets.
- * @property {boolean} isVerbose - Boolean indicating verbose mode.
- * @property {boolean} shouldCompressFolder - Boolean indicating whether to compress folder.
- * @return {Promise<object>} The options for performing the export.
+ * @property {string} initialSettings.spaceId - The CMS Space ID.
+ * @property {string} initialSettings.environmentId - The CMS Environment ID.
+ * @property {string} initialSettings.managementToken - The CMS Management Token.
+ * @property {number} initialSettings.maxEntries - The maximum entries to be fetched in each iteration.
+ * @property {string} initialSettings.rootDestinationFolder - The root destination folder for exports.
+ * @property {string} initialSettings.defaultExportName - The default name for the export.
+ * @property {boolean} initialSettings.includeDrafts - Boolean indicating whether to include drafts.
+ * @property {boolean} initialSettings.includeAssets - Boolean indicating whether to include assets.
+ * @property {boolean} initialSettings.isVerbose - Boolean indicating verbose mode.
+ * @property {boolean} initialSettings.shouldCompressFolder - Boolean indicating whether to compress folder.
+ * @return {Promise<import("contentful-export/types.js").Options>} The options for performing the export.
  */
 async function extractOptions(initialSettings) {
   const contentfulManagement = (await import('contentful-management')).default
@@ -291,18 +291,18 @@ async function extractOptions(initialSettings) {
 /**
  * Performs the export based on the provided options.
  *
- * @param {object} options - The options for performing the export.
+ * @param {import("contentful-export/types.js").Options} options - The options for performing the export.
  * @param {object} initialSettings - The initial settings obtained from command line arguments and .env files.
- * @property {string} spaceId - The CMS Space ID.
- * @property {string} environmentId - The CMS Environment ID.
- * @property {string} managementToken - The CMS Management Token.
- * @property {number} maxEntries - The maximum entries to be fetched in each iteration.
- * @property {string} rootDestinationFolder - The root destination folder for exports.
- * @property {string} defaultExportName - The default name for the export.
- * @property {boolean} includeDrafts - Boolean indicating whether to include drafts.
- * @property {boolean} includeAssets - Boolean indicating whether to include assets.
- * @property {boolean} isVerbose - Boolean indicating verbose mode.
- * @property {boolean} shouldCompressFolder - Boolean indicating whether to compress folder.
+ * @property {string} initialSettings.spaceId - The CMS Space ID.
+ * @property {string} initialSettings.environmentId - The CMS Environment ID.
+ * @property {string} initialSettings.managementToken - The CMS Management Token.
+ * @property {number} initialSettings.maxEntries - The maximum entries to be fetched in each iteration.
+ * @property {string} initialSettings.rootDestinationFolder - The root destination folder for exports.
+ * @property {string} initialSettings.defaultExportName - The default name for the export.
+ * @property {boolean} initialSettings.includeDrafts - Boolean indicating whether to include drafts.
+ * @property {boolean} initialSettings.includeAssets - Boolean indicating whether to include assets.
+ * @property {boolean} initialSettings.isVerbose - Boolean indicating verbose mode.
+ * @property {boolean} initialSettings.shouldCompressFolder - Boolean indicating whether to compress folder.
  *
  * @throws {Error} If there is an error during the ZIP file compress
  */
@@ -335,8 +335,8 @@ async function performExport(options, initialSettings) {
       const zip = new admZip()
       logFile = await buildFilePath(rootExportFolder, defaultExportName, 'log')
 
-      zip.addLocalFolder(destinationFolder)
-      zip.writeZip(zipFile, await deleteFolderAfterZip(destinationFolder))
+      zip.addLocalFolder(destinationFolder, '', '', 0o644)
+      zip.writeZip(zipFile, deleteFolderAfterZip(destinationFolder))
     } else {
       throw new Error('Error happened during ZIP file compression')
     }

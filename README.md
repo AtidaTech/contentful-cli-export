@@ -29,7 +29,7 @@ This tool simplifies exporting data from Contentful to a local json file. It's e
 
 ## 💡 Installation
 
-To use this cli script, you must have [NodeJS 🔗](https://nodejs.org/) and [npm 🔗](http://npmjs.org) installed.
+To use this cli script, you must have [Node.js 🔗](https://nodejs.org/) and [npm 🔗](http://npmjs.org) installed.
 
 To install it, simply run:
 
@@ -96,7 +96,7 @@ This script can be used from the command line and accepts various arguments for 
 * `--download-assets`: To include assets in the exported data.
 * `--verbose`: Display the progress in new lines, instead of animated UI (useful in CI).
 * `--compress`: To compress the result into a ZIP file.
-* `--export-dir`: To specify a custom directory for the exported data (default is sub-directory `CMS_EXPORT_DIR` or `export/` in your project root). The script will exit if this custom folder doesn't exist.
+* `--export-dir`: To specify a custom directory for the exported data (default is subdirectory `CMS_EXPORT_DIR` or `export/` in your project root). The script will exit if this custom folder doesn't exist.
 * `--max-allowed-limit`: Number of entries to fetch at each iteration. Max: `1000` - Recommended: `100` (lower values fire more API calls, but avoid 'Response too big' error).
 
 ## 📅 Todo
