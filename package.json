@@ -1,6 +1,6 @@
 {
   "name": "contentful-cli-export",
-  "version": "0.2.1",
+  "version": "0.3.0",
   "type": "module",
   "description": "Contentful CLI Export Environment",
   "homepage": "https://github.com/AtidaTech/contentful-cli-export",
@@ -18,7 +18,7 @@
     "contentful-cli-export": "./contentful-cli-export.js"
   },
   "engines": {
-    "node": ">=16"
+    "node": ">=18"
   },
   "repository": {
     "type": "git",
@@ -33,7 +33,7 @@
   "dependencies": {
     "adm-zip": "^0.5.9",
     "contentful-export": ">=7.18.7",
-    "contentful-lib-helpers": ">=0.2.1",
+    "contentful-lib-helpers": ">=0.3.0",
     "contentful-management": ">7.50.0",
     "dateformat": "^4.6.3",
     "dotenv": ">=10.0.0",
@@ -51,6 +51,8 @@
     "eslint-plugin-prettier": "^5.0.0",
     "eslint-plugin-react": "^7.32.2",
     "eslint-plugin-react-hooks": "^4.6.0",
+    "prettier": "^3.0.1",
+    "typescript": "^4.4.3",
     "word-wrap": "^1.2.5"
   }
 }
