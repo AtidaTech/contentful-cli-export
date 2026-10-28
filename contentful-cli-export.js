@@ -16,7 +16,7 @@ const DEFAULT_EXPORT_DIR = 'export/'
       envValues?.CMS_MANAGEMENT_TOKEN ?? PLACEHOLDER_MANAGEMENT_TOKEN
     const cmsSpaceId = envValues?.CMS_SPACE_ID ?? PLACEHOLDER_SPACE_ID
     const cmsMaxEntries =
-      parseInt(envValues?.CMS_MAX_ALLOWED_LIMIT, 10) ?? DEFAULT_ALLOWED_LIMIT
+      parseInt(envValues?.CMS_MAX_ALLOWED_LIMIT, 10) || DEFAULT_ALLOWED_LIMIT
     const cmsExportDir = envValues?.CMS_EXPORT_DIR ?? DEFAULT_EXPORT_DIR
 
     const initialSettings = await parseArguments(
@@ -53,7 +53,7 @@ async function getEnvValues(localWorkingDir, scriptDirectory) {
   const { config } = await import('dotenv')
 
   const envDataFromPath = path =>
-    existsSync(path) ? config({ path }).parsed : {}
+    existsSync(path) ? config({ path, quiet: true }).parsed : {}
 
   const paths = [
     `${scriptDirectory}/../../.env`,
@@ -97,7 +97,6 @@ async function parseArguments(
   cmsMaxEntries = DEFAULT_ALLOWED_LIMIT
 ) {
   const minimist = (await import('minimist')).default
-  const dateFormat = (await import('dateformat')).default
 
   const parsedArgs = minimist(process.argv.slice(2))
   await checkArgs(parsedArgs)
@@ -122,7 +121,16 @@ async function parseArguments(
   }
 
   const now = new Date()
-  const currentDate = dateFormat(now, 'yyyy-mm-dd-HH-MM-ss')
+  const currentDate = [
+    now.getFullYear(),
+    now.getMonth() + 1,
+    now.getDate(),
+    now.getHours(),
+    now.getMinutes(),
+    now.getSeconds()
+  ]
+    .map(value => String(value).padStart(2, '0'))
+    .join('-')
   const defaultExportName = currentDate + '-' + spaceId + '-' + environmentId
 
   return {
@@ -132,10 +140,10 @@ async function parseArguments(
     maxEntries,
     rootDestinationFolder,
     defaultExportName,
-    includeDrafts: !parsedArgs.hasOwnProperty('only-published'),
-    includeAssets: parsedArgs.hasOwnProperty('download-assets'),
-    isVerbose: parsedArgs.hasOwnProperty('verbose'),
-    shouldCompressFolder: parsedArgs.hasOwnProperty('compress')
+    includeDrafts: !Object.hasOwn(parsedArgs, 'only-published'),
+    includeAssets: Object.hasOwn(parsedArgs, 'download-assets'),
+    isVerbose: Object.hasOwn(parsedArgs, 'verbose'),
+    shouldCompressFolder: Object.hasOwn(parsedArgs, 'compress')
   }
 }
 

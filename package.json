@@ -1,6 +1,6 @@
 {
   "name": "contentful-cli-export",
-  "version": "1.1.0",
+  "version": "2.0.0",
   "type": "module",
   "description": "Contentful CLI Export Environment",
   "homepage": "https://github.com/AtidaTech/contentful-cli-export",
@@ -18,7 +18,8 @@
     "contentful-cli-export": "./contentful-cli-export.js"
   },
   "engines": {
-    "node": ">=22"
+    "node": ">=24.22.1",
+    "npm": ">=12.2.1"
   },
   "repository": {
     "type": "git",
@@ -27,29 +28,32 @@
   "author": "Atida <hello@atida.com>",
   "license": "MIT",
   "scripts": {
-    "lint": "node_modules/eslint/bin/eslint.js --resolve-plugins-relative-to ./ --ext js,mjs,cjs,jsx,ts,tsx ./contentful-cli-export.js",
-    "lint-fix": "node_modules/eslint/bin/eslint.js --resolve-plugins-relative-to ./ --ext js,mjs,cjs,jsx,ts,tsx ./contentful-cli-export.js --fix"
+    "lint": "eslint contentful-cli-export.js test scripts eslint.config.js",
+    "lint-fix": "eslint contentful-cli-export.js test scripts eslint.config.js --fix",
+    "format:check": "prettier --check contentful-cli-export.js test scripts eslint.config.js",
+    "test": "node --test test/*.test.js",
+    "check": "npm run lint && npm test && node scripts/check-package.js",
+    "prepublishOnly": "npm run check && npm audit --audit-level=low && node scripts/check-package.js --release"
   },
   "dependencies": {
     "adm-zip": "^0.6.1",
-    "axios": ">=1.20.0",
-    "contentful-export": "^8.5.0",
-    "contentful-lib-helpers": ">=1.1.0",
-    "contentful-management": ">=12.18.2 <13.0.0",
-    "follow-redirects": ">=1.16.0",
-    "dateformat": "^4.6.3",
-    "dotenv": ">=10.0.0",
-    "minimist": "^1.2.5"
+    "axios": "^1.21.0",
+    "contentful-export": "^8.5.1",
+    "contentful-lib-helpers": "^2.0.0",
+    "contentful-management": "^12.20.0",
+    "dotenv": "^18.0.9",
+    "follow-redirects": "^1.16.2",
+    "minimist": "^1.2.8"
   },
   "devDependencies": {
-    "@typescript-eslint/eslint-plugin": "^5.62.0",
-    "@typescript-eslint/parser": "^5.0.0",
-    "eslint": "^8.35.0",
-    "eslint-config-prettier": "^8.7.0",
-    "eslint-plugin-import": "^2.27.5",
-    "eslint-plugin-prettier": "^5.0.0",
-    "prettier": "^3.0.1",
-    "typescript": "^4.4.3",
-    "word-wrap": "^1.2.5"
-  }
+    "@eslint/js": "^10.0.1",
+    "eslint": "^10.13.0",
+    "globals": "^17.13.0",
+    "prettier": "^3.9.10"
+  },
+  "packageManager": "npm@12.2.1",
+  "files": [
+    "contentful-cli-export.js",
+    "CHANGELOG.md"
+  ]
 }

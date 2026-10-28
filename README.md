@@ -63,7 +63,7 @@ bun add contentful-cli-export
 
 ### Requirements
 
-* `node` >= 22
+* `node` >= 24.22.1; `npm` >= 12.2.1
 * `npm` >= 10.5.0
 * `contentful-management` >= 12.x.x
 * `contentful-export` >= 7.19.146
