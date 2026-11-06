@@ -55,5 +55,8 @@
   "files": [
     "contentful-cli-export.js",
     "CHANGELOG.md"
-  ]
+  ],
+  "overrides": {
+    "minimatch": "^11.0.5"
+  }
 }
